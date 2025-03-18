@@ -1,42 +1,36 @@
-//! Data models for the MQTT subscriber service
+//! Shared data models for the MQTT subscriber service
 
-use rumqttc::{AsyncClient, MqttOptions, QoS};
-use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
-use std::sync::Arc;
-use tokio::sync::{mpsc, Mutex, RwLock};
-use utoipa::ToSchema;
+use rumqttc::QoS;
+use std::time::Instant;
 
-/// Connection manager for MQTT
-pub struct MqttConnection {
-    pub client: Option<AsyncClient>,
-    pub event_loop_handle: Option<tokio::task::JoinHandle<()>>,
-}
-
-/// Type for shared state across handlers
-pub struct AppState {
-    pub mqtt_connection: Arc<Mutex<MqttConnection>>,
-    pub topics: Arc<RwLock<HashSet<String>>>,
-    pub mqtt_options: MqttOptions,
-    pub mqtt_qos: QoS,
-    pub message_handlers: Arc<Mutex<Vec<mpsc::Sender<(String, Vec<u8>)>>>>,
-}
-
-/// Request body for subscribe endpoint
-#[derive(Deserialize, ToSchema)]
-pub struct SubscribeRequest {
+/// MQTT Message with metadata
+#[derive(Debug)]
+#[allow(dead_code)] // Silence warning about unused fields
+pub struct MqttMessage {
     pub topic: String,
+    pub payload: Vec<u8>,
+    pub qos: QoS,
+    pub retain: bool,
+    pub received_at: Instant,
 }
 
-/// Response structure
-#[derive(Serialize, ToSchema)]
-pub struct ApiResponse {
-    pub success: bool,
-    pub message: String,
+/// Message processing metrics
+#[derive(Debug, Clone)]
+pub struct MessageMetrics {
+    pub messages_received: usize,
+    pub messages_processed: usize,
+    pub messages_dropped: usize,
+    pub processing_errors: usize,
 }
 
-/// Response structure for topics
-#[derive(Serialize, ToSchema)]
-pub struct TopicsResponse {
-    pub topics: Vec<String>,
+impl MessageMetrics {
+    /// Create a new metrics instance
+    pub fn new() -> Self {
+        Self {
+            messages_received: 0,
+            messages_processed: 0,
+            messages_dropped: 0,
+            processing_errors: 0,
+        }
+    }
 }
