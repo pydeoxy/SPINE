@@ -7,7 +7,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 use tokio::sync::{mpsc, Mutex, RwLock};
 
-use crate::models::{MessageMetrics, MqttMessage};
+use crate::metrics::MessageMetrics;
+use crate::models::MqttMessage;
 use crate::processor::handler::process_message;
 
 /// Process incoming messages
