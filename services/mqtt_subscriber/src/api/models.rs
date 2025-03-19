@@ -29,6 +29,8 @@ pub struct TopicsResponse {
 /// Response for metrics endpoint
 #[derive(Serialize, ToSchema)]
 pub struct MetricsResponse {
+    /// Time window in seconds
+    pub window_time_sec: u64,
     /// Total number of messages received
     pub messages_received: usize,
     /// Total number of messages processed
@@ -49,8 +51,6 @@ pub struct MetricsResponse {
     pub average_processing_time_ms: f64,
     /// Maximum processing time seen in milliseconds
     pub max_processing_time_ms: f64,
-    /// Time since first message in seconds (if any)
-    pub uptime_since_first_message: Option<u64>,
     /// Time of the last message (ISO 8601 format, if any)
     pub last_message_time: Option<String>,
 }

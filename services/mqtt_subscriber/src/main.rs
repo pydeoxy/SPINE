@@ -12,6 +12,7 @@ use crate::mqtt::subscriber::MqttSubscriber;
 // Import our modules
 mod api;
 mod config;
+mod metrics;
 mod models;
 mod mqtt;
 mod processor;

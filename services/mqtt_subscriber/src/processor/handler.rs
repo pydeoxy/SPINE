@@ -3,12 +3,13 @@
 use log::{debug, info};
 use std::{str, time::Instant};
 
+use crate::metrics::MessageMetrics;
 use crate::models::MqttMessage;
 
 /// Process a single MQTT message
 pub async fn process_message(
     message: &MqttMessage,
-    metrics: &mut crate::models::MessageMetrics,
+    metrics: &mut MessageMetrics,
 ) -> Result<(), String> {
     // Start timing the processing
     let processing_start = Instant::now();
