@@ -1,6 +1,5 @@
 //! Configuration handling for the MQTT subscriber service
 
-use log::info;
 use rumqttc::{MqttOptions, QoS};
 use std::env;
 use std::time::{Duration, SystemTime};
@@ -18,7 +17,6 @@ pub struct ApiConfig {
 pub struct KafkaConfig {
     pub broker: String,
     pub topic: String,
-    pub group_id: String,
 }
 
 pub struct Config {
@@ -68,8 +66,6 @@ pub fn load_mqtt_configs() -> MqttConfig {
         mqtt_options.set_credentials(mqtt_username, mqtt_password);
     }
 
-    info!("Configuration loaded");
-
     MqttConfig {
         mqtt_options,
         mqtt_qos,
@@ -87,12 +83,10 @@ pub fn load_api_configs() -> ApiConfig {
 pub fn load_kafka_configs() -> KafkaConfig {
     let kafka_broker = get_env_or_default("KAFKA_BROKER", "localhost:9092");
     let kafka_topic = get_env_or_default("KAFKA_TOPIC", "mqtt_topic");
-    let kafka_group_id = get_env_or_default("KAFKA_GROUP_ID", "mqtt_group");
 
     KafkaConfig {
         broker: kafka_broker,
         topic: kafka_topic,
-        group_id: kafka_group_id,
     }
 }
 

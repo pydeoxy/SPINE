@@ -3,15 +3,21 @@
 use dotenv::dotenv;
 use log::info;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 
 // Import from our modules
+use crate::api::handlers::AppState;
 use crate::api::routes::create_router;
 use crate::config::load_config;
+use crate::kafka::producer::KafkaProducer;
+use crate::metrics::MessageMetrics;
 use crate::mqtt::subscriber::MqttSubscriber;
+use crate::processor::handler::start_message_processor;
 
 // Import our modules
 mod api;
 mod config;
+mod kafka;
 mod metrics;
 mod models;
 mod mqtt;
@@ -30,25 +36,62 @@ async fn main() {
 
     info!("Starting MQTT Subscriber Service");
 
-    // Load configuration
-    let config = load_config();
+    // Load configurations
+    let configs = load_config();
+
+    // TODO: Add logic to check if the Kafka producer is connected
+    // TODO: Add logic to handle kafka connection errors (e.g. temporary save to disk)
+
+    // Create and initialize the Kafka producer
+    let kafka_producer = Arc::new(KafkaProducer::new(
+        &configs.kafka.broker,
+        &configs.kafka.topic,
+    ));
+
+    // Create and initialize the metrics
+    let metrics = Arc::new(RwLock::new(MessageMetrics::new()));
 
     // Create and initialize the MQTT subscriber
-    let subscriber = MqttSubscriber::new(config.mqtt.mqtt_options, config.mqtt.mqtt_qos);
+    let (subscriber, event_loop) =
+        MqttSubscriber::new(configs.mqtt.mqtt_options, configs.mqtt.mqtt_qos);
     let subscriber = Arc::new(subscriber);
 
+    // TODO: Add a endpoints to check connection to kafka and mqtt, service performance metrics
+
+    // Start the message processor in a background task
+    let processor_metrics = Arc::clone(&metrics);
+    let processor_subscriber = Arc::clone(&subscriber);
+    let processor_kafka = Arc::clone(&kafka_producer);
+
+    tokio::spawn(async move {
+        start_message_processor(
+            event_loop,
+            processor_subscriber,
+            processor_kafka,
+            processor_metrics,
+        )
+        .await;
+    });
+
+    // Create application state for API
+    let app_state = Arc::new(AppState {
+        subscriber: Arc::clone(&subscriber),
+        metrics: Arc::clone(&metrics),
+        _kafka_producer: Arc::clone(&kafka_producer),
+    });
+
     // Create API router
-    let app = create_router(subscriber.clone());
+    let app = create_router(app_state);
 
     // Start the HTTP server
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.api.port))
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", configs.api.port))
         .await
         .unwrap();
 
-    info!("API server running on http://0.0.0.0:{}", config.api.port);
+    info!("API server running on http://0.0.0.0:{}", configs.api.port);
     info!(
         "API documentation available at http://0.0.0.0:{}/docs/",
-        config.api.port
+        configs.api.port
     );
 
     axum::serve(listener, app).await.unwrap();
