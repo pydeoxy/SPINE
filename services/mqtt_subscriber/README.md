@@ -1,16 +1,17 @@
 # MQTT Subscriber Service
 
-A Rust-based MQTT subscriber service that manages MQTT topic subscriptions via a REST API.
+A Rust-based MQTT subscriber service that manages MQTT topic subscriptions via a REST API and forwards messages to Kafka for further processing.
 
 ## Features
 
 - RESTful API for managing MQTT topic subscriptions
 - On-demand MQTT connection management
+- Kafka integration with robust connection handling
 - Swagger UI for API documentation and testing
 - Asynchronous message processing
 - Robust error handling and reconnection logic
 - Time-windowed metrics collection system
-- Future-ready for Kafka integration
+- Snappy compression for Kafka messages
 
 ## Project Structure
 
@@ -20,23 +21,38 @@ src/
 │   ├── handlers.rs   # API endpoint handlers
 │   ├── models.rs     # API data models
 │   └── routes.rs     # API route setup
+├── kafka/            # Kafka integration
+│   └── producer.rs   # Kafka producer with reconnection logic
 ├── metrics/          # Metrics collection system
 │   ├── mod.rs        # Module exports and constants
 │   ├── message_metrics.rs  # Main metrics aggregation
 │   ├── ring_buffer.rs      # Time window data structure
 │   └── windowed.rs         # Per-window metrics collection
 ├── mqtt/             # MQTT functionality
-│   ├── subscriber.rs # Main subscriber logic
-│   ├── connection.rs # Connection management
-│   └── mod.rs        # MQTT module exports
+│   └── subscriber.rs # Main subscriber logic
 ├── processor/        # Message processing
-│   ├── handler.rs    # Message handling logic
-│   ├── kafka.rs      # Kafka integration (placeholder)
-│   └── mod.rs        # Processor module exports
+│   └── handler.rs    # Message handling logic
 ├── config.rs         # Configuration handling
 ├── models.rs         # Shared data models
 └── main.rs           # Application entry point
 ```
+
+## Kafka Integration
+
+The service includes a robust Kafka integration with the following features:
+
+- **Resilient connection handling**: Automatic reconnection with exponential backoff
+- **Topic-specific producers**: Dedicated methods for sensor data and service metrics
+- **Compression**: Uses Snappy compression to reduce bandwidth usage
+- **Health monitoring**: Background health checks to detect connection issues
+- **Error handling**: Graceful handling of Kafka outages
+
+### Kafka Producer Features
+
+- **Connection management**: Automatic reconnection with exponential backoff
+- **Topic validation**: Ensures topics exist before sending messages
+- **Metrics integration**: Tracks message delivery status for accurate metrics
+- **Extensible design**: Prepared for future enhancements like Protobuf serialization
 
 ## Metrics System
 
@@ -53,7 +69,7 @@ The service includes a sophisticated metrics collection system with the followin
 | ---------------------------- | ----------------------------------------------------------- |
 | `messages_received`          | Total number of messages received in completed windows      |
 | `messages_processed`         | Total number of messages successfully processed             |
-| `messages_dropped`           | Number of messages that couldn't be processed               |
+| `messages_dropped`           | Number of messages that couldn't be delivered to Kafka      |
 | `processing_errors`          | Count of errors encountered during processing               |
 | `throughput`                 | Messages per second (calculated from completed window data) |
 | `average_message_size`       | Mean size of received messages in bytes                     |
@@ -83,6 +99,11 @@ MQTT_PASSWORD=
 MQTT_QOS=0
 MQTT_KEEP_ALIVE=30
 
+# Kafka Settings
+KAFKA_BROKER=localhost:9094
+KAFKA_TOPIC_SENSOR_DATA=smartlab-sensor-data
+KAFKA_TOPIC_SERVICE_METRICS=smartlab-subscriber-metrics
+
 # API Settings
 API_PORT=3000
 
@@ -92,7 +113,7 @@ RUST_LOG=info
 
 ## API Endpoints
 
-- `GET /health` - Health check endpoint
+- `GET /health` - Health check endpoint (includes MQTT and Kafka connection status)
 - `GET /topics` - List all subscribed topics
 - `GET /metrics` - Get service metrics (from the last completed window)
 - `POST /subscribe` - Subscribe to a new topic
@@ -109,6 +130,29 @@ cargo run
 The API will be available at http://localhost:3000 with documentation at http://localhost:3000/docs/
 
 ## Deployment Considerations
+
+### Kafka Configuration
+
+For production deployments:
+
+- Ensure Kafka topics exist before starting the service
+- Consider increasing the number of partitions for high-throughput topics
+- Adjust producer settings for your environment's reliability/throughput needs
+
+### Handling Kafka Outages
+
+The service is designed to handle Kafka outages:
+
+- It will continue processing MQTT messages
+- Messages will be marked as "dropped" when Kafka is unavailable
+- Metrics will track the impact of Kafka outages
+- The service will automatically try to reconnect to Kafka
+
+For production workloads with zero message loss requirements, consider:
+
+- Implementing a local storage buffer for messages when Kafka is down
+- Adding retry logic to replay failed messages when Kafka reconnects
+- Using a more robust monitoring solution to alert on Kafka connectivity issues
 
 ### Log Rotation
 
@@ -141,9 +185,10 @@ pub const NUM_WINDOWS: usize = 1; // Default: 1 window
 
 ### Future Extensions
 
-The metrics system is designed to be extensible:
+The metrics system and Kafka integration are designed to be extensible:
 
-- Increase `NUM_WINDOWS` to retain more historical data
-- Add sliding window calculations for different time periods (1m, 5m, 15m)
-- Implement percentile-based metrics (p50, p95, p99 processing times)
+- Add protobuf serialization for structured message formats
+- Implement message schema validation and enforcement
 - Add topic-specific metrics breakdowns
+- Implement message replay and recovery mechanisms
+- Create advanced routing rules based on message content
