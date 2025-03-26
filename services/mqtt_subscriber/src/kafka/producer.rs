@@ -14,7 +14,9 @@ pub struct KafkaProducer {
     producer: FutureProducer,
     bootstrap_servers: String,
     connection_status: Arc<AtomicBool>,
+    available_topics: Vec<String>,
     health_check_interval: Duration,
+    reconnect_backoff_ms: Arc<std::sync::atomic::AtomicU64>,
 }
 
 impl KafkaProducer {
@@ -23,14 +25,16 @@ impl KafkaProducer {
         let reconnect_attempts = 5;
         let health_check_interval = Duration::from_secs(30);
 
-        let (producer, connection_status) =
+        let (producer, connection_status, available_topics) =
             Self::create_producer(bootstrap_servers, reconnect_attempts).await?;
 
         let kafka_producer = KafkaProducer {
             producer,
             bootstrap_servers: bootstrap_servers.to_string(),
             connection_status: Arc::new(AtomicBool::new(connection_status)),
+            available_topics,
             health_check_interval,
+            reconnect_backoff_ms: Arc::new(std::sync::atomic::AtomicU64::new(1000)),
         };
 
         // Start health check in background
@@ -61,17 +65,10 @@ impl KafkaProducer {
     async fn create_producer(
         bootstrap_servers: &str,
         max_attempts: u32,
-    ) -> Result<(FutureProducer, bool), KafkaError> {
+    ) -> Result<(FutureProducer, bool, Vec<String>), KafkaError> {
         let mut attempt = 0;
 
         while attempt < max_attempts {
-            info!(
-                "Attempting to connect to Kafka at {} (attempt {}/{})",
-                bootstrap_servers,
-                attempt + 1,
-                max_attempts
-            );
-
             match Self::initialize_producer(bootstrap_servers).await {
                 Ok(producer) => {
                     // Perform handshake by checking metadata
@@ -84,23 +81,21 @@ impl KafkaProducer {
                                 "Successfully connected to Kafka cluster with {} brokers",
                                 metadata.brokers().len()
                             );
-                            info!(
-                                "Available topics: {:?}",
-                                metadata
-                                    .topics()
-                                    .iter()
-                                    .map(|t| t.name())
-                                    .collect::<Vec<_>>()
-                            );
-                            return Ok((producer, true));
+                            let available_topics = metadata
+                                .topics()
+                                .iter()
+                                .map(|t| t.name().to_string())
+                                .collect::<Vec<_>>();
+                            debug!("Available topics: {:?}", available_topics);
+                            return Ok((producer, true, available_topics));
                         }
                         Err(e) => {
-                            warn!("Connected to Kafka but metadata fetch failed: {}", e);
+                            error!("Connected to Kafka but metadata fetch failed: {}", e);
                         }
                     }
                 }
                 Err(e) => {
-                    warn!("Failed to connect to Kafka: {}", e);
+                    error!("Failed to connect to Kafka: {}", e);
                 }
             }
 
@@ -113,22 +108,36 @@ impl KafkaProducer {
         }
 
         // If all attempts failed but we need to continue, create a producer anyway and return with a status of false
-        warn!("All connection attempts to Kafka failed, creating producer in disconnected state");
+        info!("All connection attempts to Kafka failed, creating producer in disconnected state");
         let producer = Self::initialize_producer(bootstrap_servers).await?;
-        Ok((producer, false))
+        Ok((producer, false, Vec::new()))
     }
 
     fn start_health_check(&self) {
         let connection_status = self.connection_status.clone();
         let bootstrap_servers = self.bootstrap_servers.clone();
         let interval = self.health_check_interval;
+        let reconnect_backoff = self.reconnect_backoff_ms.clone();
 
         tokio::spawn(async move {
             let mut interval_timer = tokio::time::interval(interval);
 
             loop {
                 interval_timer.tick().await;
-                // Create a temporary client to check health without affecting the producer
+
+                if !connection_status.load(Ordering::SeqCst) {
+                    let current_backoff = reconnect_backoff.load(Ordering::SeqCst);
+                    let new_backoff = std::cmp::min(current_backoff * 2, 60000); // Max 60 seconds
+                    reconnect_backoff.store(new_backoff, Ordering::SeqCst);
+
+                    debug!(
+                        "Checking Kafka connection. Current backoff: {}ms",
+                        current_backoff
+                    );
+                } else {
+                    reconnect_backoff.store(1000, Ordering::SeqCst);
+                }
+
                 let client_config = ClientConfig::new()
                     .set("bootstrap.servers", &bootstrap_servers)
                     .set("socket.timeout.ms", "5000")
@@ -141,19 +150,24 @@ impl KafkaProducer {
                             if !connection_status.load(Ordering::SeqCst) {
                                 info!("Kafka connection restored");
                                 connection_status.store(true, Ordering::SeqCst);
+                                reconnect_backoff.store(1000, Ordering::SeqCst);
                             }
                         }
                         Err(e) => {
                             if connection_status.load(Ordering::SeqCst) {
-                                warn!("Kafka connection lost: {}", e);
+                                error!("Kafka connection lost: {}", e);
                                 connection_status.store(false, Ordering::SeqCst);
+                            } else {
+                                error!("Kafka still disconnected: {}", e);
                             }
                         }
                     },
                     Err(e) => {
                         if connection_status.load(Ordering::SeqCst) {
-                            warn!("Failed to create Kafka client for health check: {}", e);
+                            error!("Failed to create Kafka client for health check: {}", e);
                             connection_status.store(false, Ordering::SeqCst);
+                        } else {
+                            error!("Still unable to create Kafka client: {}", e);
                         }
                     }
                 }
@@ -167,10 +181,16 @@ impl KafkaProducer {
     }
 
     /// Send a message to Kafka with graceful fallback
-    pub async fn send(&self, topic: &str, payload: &[u8]) -> Result<(), KafkaError> {
+    pub async fn send(&self, topic: &str, payload: &[u8]) -> Result<(), String> {
         if !self.connection_status.load(Ordering::SeqCst) {
-            warn!("Not sending message to Kafka as connection is down");
-            return Err(KafkaError::Canceled);
+            return Err("Skipped sending to Kafka (known disconnected)".to_string());
+        }
+
+        if !self.available_topics.contains(&topic.to_string()) {
+            return Err(format!(
+                "Skipped sending to Kafka (topic {} not available)",
+                topic
+            ));
         }
 
         let record = FutureRecord::to(topic).key(topic).payload(payload);
@@ -183,10 +203,16 @@ impl KafkaProducer {
                 Ok(())
             }
             Err((e, _)) => {
-                // Update connection status on failure
-                self.connection_status.store(false, Ordering::Relaxed);
-                error!("Error sending to Kafka: {}", e);
-                Err(e)
+                if self.connection_status.load(Ordering::SeqCst) {
+                    self.connection_status.store(false, Ordering::Relaxed);
+                    return Err(format!("Failed to send to Kafka: {}", e));
+                } else {
+                    debug!("Still unable to send to Kafka: {}", e);
+                    return Err(format!(
+                        "Skipped sending to Kafka (known disconnected): {}",
+                        e
+                    ));
+                }
             }
         }
     }
