@@ -1,6 +1,6 @@
 //! Message processing handlers
 
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use rumqttc::{Event, EventLoop, Packet};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
@@ -60,19 +60,27 @@ pub async fn start_message_processor(
                             // Clone metrics_clone again before passing it to process_message
                             let metrics_for_processing = Arc::clone(&metrics_clone);
 
+                            // Track whether the message was successfully delivered to Kafka
+                            let mut delivered_to_kafka = false;
+                            // Start timing the processing
+                            let processing_start = Instant::now();
                             // Process the message in a separate task
-                            if let Err(e) = process_message(
-                                &message,
-                                metrics_for_processing,
-                                &kafka_producer_clone,
-                            )
-                            .await
-                            {
-                                error!("Error processing message: {}", e);
+                            match process_message(&message, &kafka_producer_clone).await {
+                                Ok(_) => {
+                                    delivered_to_kafka = true;
+                                }
+                                Err(e) => {
+                                    error!("{}", e);
+                                }
+                            }
 
-                                // Update error metrics - don't use if let with RwLock.write()
-                                {
-                                    let mut metrics_guard = metrics_clone.write().await;
+                            let processing_duration = processing_start.elapsed();
+
+                            // Update metrics
+                            {
+                                let mut metrics_guard = metrics_for_processing.write().await;
+                                metrics_guard.record_message_processed(processing_duration);
+                                if !delivered_to_kafka {
                                     metrics_guard.record_processing_error();
                                     metrics_guard.record_message_dropped();
                                 }
@@ -92,11 +100,11 @@ pub async fn start_message_processor(
                 }
             }
             Err(_) => {
-                // Update the connection status
+                // Update the MQTT subscriber connection status
                 mqtt_subscriber.update_connection_status(false);
                 tokio::time::sleep(Duration::from_secs(5)).await;
 
-                // Try to reconnect and resubscribe to topics
+                // Try to reconnect and resubscribe to MQTT topics
                 mqtt_subscriber.resubscribe_to_topics().await;
             }
         }
@@ -106,55 +114,25 @@ pub async fn start_message_processor(
 /// Process a single MQTT message
 pub async fn process_message(
     message: &MqttMessage,
-    metrics: Arc<RwLock<MessageMetrics>>,
     kafka_producer: &Arc<KafkaProducer>,
 ) -> Result<(), String> {
-    // Start timing the processing
-    let processing_start = Instant::now();
-
-    // Get payload as string for logging
-    let payload_str = std::str::from_utf8(&message.payload).unwrap_or("[binary data]");
-
-    // Truncate long payloads for logging
-    let display_payload = if payload_str.len() > 100 {
-        format!("{}... (truncated)", &payload_str[..100])
-    } else {
-        payload_str.to_string()
-    };
-
-    // Log the message details
-    debug!(
-        "Processing message from topic '{}': {}",
-        message.topic, display_payload
-    );
+    // TODO: Add logic to validate message and populate message with additional fields
 
     // Send to Kafka with graceful error handling
     match kafka_producer.send(&message.topic, &message.payload).await {
         Ok(_) => {
             // Message sent successfully
             debug!("Successfully sent message to Kafka");
+            return Ok(());
         }
         Err(e) => {
-            // Just log the error, don't fail the whole message processing
+            // TODO: Add additional logic to store non-delivered messages in e.g. temporary storage
+
+            // Return the error so it can be handled by the caller
             if kafka_producer.is_connected() {
-                // Only log detailed errors if we thought we were connected
-                warn!("Failed to send to Kafka: {}", e);
-            } else {
-                // Just log at debug level if we know we're disconnected
-                debug!("Skipped sending to Kafka: {}", e);
+                return Err(format!("Failed to send to Kafka: {}", e));
             }
+            return Err("Skipped sending to Kafka (known disconnected)".to_string());
         }
     }
-
-    // Record processing time
-    let processing_time = processing_start.elapsed();
-
-    // Update metrics
-    {
-        let mut metrics_guard = metrics.write().await;
-        metrics_guard.record_message_processed(processing_time);
-    }
-
-    // Return success even if Kafka send failed
-    Ok(())
 }
