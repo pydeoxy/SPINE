@@ -14,7 +14,7 @@ rdkafka = "0.36.2"
 tokio = { version = "1.28.0", features = ["full"] }
 
 # Web framework
-axum = "0.8.1"
+axum = "0.7.4"
 tower = "0.5.2"
 tower-http = { version = "0.6.2", features = ["trace", "cors"] }
 
@@ -30,8 +30,8 @@ dotenv = "0.15.0"
 tokio-stream = "0.1.14"
 
 # OpenAPI documentation
-utoipa = { version = "5.3.1", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "9.0.0", features = ["axum"] }
+utoipa = { version = "4.2.0", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "6.0.0", features = ["axum"] }
 
 # Added for the chrono dependency
 chrono = "0.4"
