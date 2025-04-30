@@ -1,6 +1,7 @@
 import * as z from "zod";
 
 export const kafkaSourceSchema = z.object({
+  label: z.string().default("Kafka Source"),
   // Kafka consumer specific properties
   consumer: z.object({
     topic: z.string().min(1, { message: "Topic is required" }),
@@ -14,6 +15,7 @@ export const kafkaSourceSchema = z.object({
 
   // Offset specific properties
   preview: z.object({
+    showPreview: z.boolean().optional(),
     offsetMode: z.enum(["earliest", "latest"]),
     sampleSize: z
       .number()
@@ -57,7 +59,7 @@ export type KafkaSourceFormValuesPreview = z.infer<
 export type KafkaSourceFormValuesDeserialization = z.infer<
   typeof kafkaSourceSchema.shape.deserialization
 >;
-export type KafkaSourceFormValuesFields = z.infer<
+export type KafkaSourceFormValuesSchema = z.infer<
   typeof kafkaSourceSchema.shape.schema
 >;
 export type KafkaSourceFormValuesEventTime = z.infer<

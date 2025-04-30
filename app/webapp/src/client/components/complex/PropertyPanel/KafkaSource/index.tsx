@@ -5,7 +5,7 @@ import {
   KafkaSourceFormValuesPreview,
   KafkaSourceFormValuesDeserialization,
   KafkaSourceFormValuesEventTime,
-  KafkaSourceFormValuesFields,
+  KafkaSourceFormValuesSchema,
 } from "./schemas";
 import { ConsumerSection } from "./ConsumerSection";
 import { PreviewSection } from "./PreviewSection";
@@ -27,11 +27,9 @@ export const KafkaSource: React.FC<KafkaSourceProps> = ({ data, setData }) => {
       | KafkaSourceFormValuesConsumer
       | KafkaSourceFormValuesPreview
       | KafkaSourceFormValuesDeserialization
-      | KafkaSourceFormValuesFields
+      | KafkaSourceFormValuesSchema
       | KafkaSourceFormValuesEventTime
   ) => {
-    console.log("Handle Apply for section: ", section);
-
     await setData({
       ...data,
       [section]: consumerData,
@@ -41,8 +39,6 @@ export const KafkaSource: React.FC<KafkaSourceProps> = ({ data, setData }) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return true;
   };
-
-  console.log("data", data);
 
   return (
     <Accordion type="multiple" className="w-full" defaultValue={["consumer"]}>
@@ -66,7 +62,7 @@ export const KafkaSource: React.FC<KafkaSourceProps> = ({ data, setData }) => {
       />
       <FieldsSection
         data={data.schema}
-        onApply={(data: KafkaSourceFormValuesFields) =>
+        onApply={(data: KafkaSourceFormValuesSchema) =>
           handleApply("schema", data)
         }
       />

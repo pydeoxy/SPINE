@@ -19,25 +19,25 @@ import {
   AccordionItem,
 } from "@/client/components/basics/accordion";
 import { SectionHeader } from "../SectionHeader";
-import { KafkaSourceFormValuesFields, kafkaSourceSchema } from "./schemas";
+import { KafkaSourceFormValuesSchema, kafkaSourceSchema } from "./schemas";
 import { useFormState } from "@/client/hooks/useFormState";
 
 export const FieldsSection = ({
   data,
   onApply,
 }: {
-  data: KafkaSourceFormValuesFields;
-  onApply: (data: KafkaSourceFormValuesFields) => Promise<boolean>;
+  data: KafkaSourceFormValuesSchema;
+  onApply: (data: KafkaSourceFormValuesSchema) => Promise<boolean>;
 }) => {
   // Initialize form with properly typed data
-  const form = useForm<KafkaSourceFormValuesFields>({
+  const form = useForm<KafkaSourceFormValuesSchema>({
     resolver: zodResolver(kafkaSourceSchema.shape.schema),
     defaultValues: data,
   });
 
   const { status, handleSubmit, setStatus } = useFormState(form);
 
-  const handleApply = async (values: KafkaSourceFormValuesFields) => {
+  const handleApply = async (values: KafkaSourceFormValuesSchema) => {
     await handleSubmit(values, onApply);
   };
 
