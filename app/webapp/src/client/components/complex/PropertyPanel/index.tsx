@@ -42,8 +42,8 @@ export const PropertyPanel = ({
 
   // Determine which editor to show based on node type
   const renderEditor = () => {
-    switch (selectedNode.type) {
-      case "kafkaSource":
+    switch (selectedNode.data.label) {
+      case "Kafka Source":
         return (
           <KafkaSource
             key={selectedNode.id}
@@ -51,10 +51,10 @@ export const PropertyPanel = ({
             setData={handleUpdate}
           />
         );
-      case "filter":
+      case "Filter":
         return <Filter key={selectedNode.id} />;
       default:
-        return <div>Unknown node type: {selectedNode.type}</div>;
+        return <div>Unknown node: {selectedNode.id}</div>;
     }
   };
 
@@ -62,7 +62,7 @@ export const PropertyPanel = ({
     <div className={cn("flex flex-col", className)}>
       <div className="bg-surface flex justify-between items-center py-2 px-4">
         <span className="text-base font-medium text-foreground">
-          {`${selectedNode.type} (${selectedNode.id})`}
+          {`${selectedNode.data.label} (${selectedNode.id})`}
         </span>
         <Button variant="primary">
           <BookmarkIcon className="size-4 mr-1" />
