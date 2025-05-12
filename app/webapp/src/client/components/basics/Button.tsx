@@ -51,7 +51,7 @@ export function Button({
   return (
     <HeadlessButton
       {...(props as HeadlessButtonProps)}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size }), className)}
     >
       <TouchTarget>{children}</TouchTarget>
     </HeadlessButton>
