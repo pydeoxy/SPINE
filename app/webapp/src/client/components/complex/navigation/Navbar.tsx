@@ -13,6 +13,7 @@ import { useRouter } from "next/router";
 import UserMenu from "./UserMenu";
 import AvatarButton from "./AvatarButton";
 import ThemeButton from "./ThemButton";
+import Image from "next/image";
 
 type NavbarProps = {
   navigation: { name: string; href: string }[];
@@ -26,16 +27,18 @@ export default function Navbar({ navigation }: NavbarProps) {
       {({ open, close }) => (
         <>
           {/* Navbar raw content */}
-          <div className="w-full z-50 h-16 bg-background border-b border-border shadow-xs flex items-center justify-between px-4">
-            <span className="text-3xl text-primary fill-primary font-bold mr-2">
-              {/* Replace with your SVG or logo */}
-              <svg width="32" height="32" viewBox="0 0 32 32">
-                <path d="M16 4L28 28H4L16 4Z" fill="currentColor" />
-              </svg>
-            </span>
+          <div className="w-full z-50 h-16 bg-background border-b border-border shadow-xs flex items-center justify-between pr-4">
+            {/* Replace with your SVG or logo */}
+            <Image
+              src="/metropolia-logo.png"
+              alt="Logo"
+              width={100}
+              height={100}
+              className="p-4"
+            />
 
             {/* Nav Links */}
-            <div className="hidden md:flex gap-6 flex-1 ml-8">
+            <div className="hidden md:flex gap-6 flex-1 ml-4">
               {navigation.map((link) => (
                 <Link
                   key={link.name}

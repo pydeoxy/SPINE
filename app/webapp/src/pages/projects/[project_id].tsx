@@ -3,6 +3,7 @@ import FlowView from "@/client/components/complex/flink-pipeline/FlowView";
 import { ReactFlowProvider, Node } from "@xyflow/react";
 import PropertyPanel from "@/client/components/complex/flink-pipeline/PropertyPanel";
 import { useState } from "react";
+import { withAuthSSR } from "@/server/auth/authenticated-ssr";
 
 function Project() {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -35,3 +36,17 @@ Project.getLayout = function getLayout(page: React.ReactNode) {
 };
 
 export default Project;
+
+export const getServerSideProps = withAuthSSR({
+  handler: async (ctx) => {
+    const { session } = ctx.req;
+    const { project_id } = ctx.query;
+
+    return {
+      props: {
+        user: session.data,
+        project_id,
+      },
+    };
+  },
+});

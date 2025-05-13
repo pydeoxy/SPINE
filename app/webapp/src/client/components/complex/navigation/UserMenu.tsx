@@ -3,52 +3,39 @@ import { Avatar } from "@/client/components/basics/Avatar";
 import { cn } from "@/client/utils";
 import Link from "next/link";
 import ThemeButton from "./ThemButton";
+import { useAuth } from "@/client/context/AuthProvider";
 
 type UserMenuProps = {
   onClick: () => void;
 };
 
 export default function UserMenu({ onClick }: UserMenuProps) {
-  const user = {
-    data: {
-      fullName: "Tom Cook",
-      email: "tom@example.com",
-      image: "/avatar.png",
-    },
-  };
+  const { user, signOut } = useAuth();
   const { asPath: currentPath } = useRouter();
 
-  if (user.data) {
+  if (user) {
     return (
       <>
         <div className="flex items-center px-5">
           <div className="flex-shrink-0 text-foreground/70">
-            <Avatar
-              src={user.data.image}
-              alt={user.data.fullName}
-              className="h-10 w-10"
-            />
+            <Avatar src={""} alt={user.email} />
           </div>
           <div className="ml-3">
-            <div className="text-base text-foreground">
-              {user.data.fullName}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {user.data.email}
+            <div className="text-base font-medium text-foreground/90">
+              {user.email}
             </div>
           </div>
-          <div className="flex-1" />
-          <ThemeButton />
+          <div className="ml-auto">
+            <ThemeButton />
+          </div>
         </div>
-
-        <div className="mt-3">
+        <div className="mt-3 space-y-1 px-5">
           <button
-            className={cn(
-              "w-full border-transparent text-foreground hover:border-border hover:bg-surface hover:text-foreground/90",
-              "flex items-center border-l-4 py-2 pl-3 pr-4 text-sm"
-            )}
-            onClick={() => {}}
-            data-testrole="sb-mobile-navigation-option"
+            className="block w-full text-left hover:text-primary hover:cursor-pointer"
+            onClick={() => {
+              signOut();
+              onClick();
+            }}
           >
             Sign out
           </button>

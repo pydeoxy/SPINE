@@ -1,3 +1,4 @@
+import { withAuthSSR } from "@/server/auth/authenticated-ssr";
 import AppLayout from "../client/layout/layout";
 
 function Home() {
@@ -9,3 +10,15 @@ Home.getLayout = function getLayout(page: React.ReactNode) {
 };
 
 export default Home;
+
+export const getServerSideProps = withAuthSSR({
+  handler: async (ctx) => {
+    const user = ctx.req.session.data;
+
+    return {
+      props: {
+        user,
+      },
+    };
+  },
+});

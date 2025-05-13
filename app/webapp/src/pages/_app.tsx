@@ -1,16 +1,27 @@
 import "../styles/globals.css";
 import { AppProps } from "next/app";
 import { ThemeProvider } from "@/client/hooks/useTheme";
-import AppLayout from "@/client/layout/layout";
+import { NextPage } from "next";
+import { ReactElement, ReactNode } from "react";
+import { api } from "@/utils/trpc";
 
-function MyApp({ Component, pageProps }: AppProps) {
+export type NextPageWithLayout<P = Record<string, never>, IP = P> = NextPage<
+  P,
+  IP
+> & {
+  getLayout?: (page: ReactElement) => ReactNode;
+};
+
+type AppPropsWithLayout = AppProps & {
+  Component: NextPageWithLayout;
+};
+
+function MyApp({ Component, pageProps }: AppPropsWithLayout) {
+  const getLayout = Component.getLayout || ((page) => page);
+
   return (
-    <ThemeProvider>
-      <AppLayout>
-        <Component {...pageProps} />
-      </AppLayout>
-    </ThemeProvider>
+    <ThemeProvider>{getLayout(<Component {...pageProps} />)}</ThemeProvider>
   );
 }
 
-export default MyApp;
+export default api.withTRPC(MyApp);
