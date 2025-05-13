@@ -3,9 +3,12 @@ import { useRef } from "react";
 import { Avatar } from "../../basics/Avatar";
 import { useEffect } from "react";
 import { cn } from "@/client/utils";
+import { useAuth } from "@/client/context/AuthProvider";
 
 export default function AvatarButton({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
+  const { signOut } = useAuth();
+
   const avatarRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -59,7 +62,7 @@ export default function AvatarButton({ className }: { className?: string }) {
             className="block w-full text-left hover:text-primary hover:cursor-pointer"
             onClick={() => {
               setOpen(false);
-              // TODO: Add sign out logic here
+              signOut();
             }}
           >
             Sign out
