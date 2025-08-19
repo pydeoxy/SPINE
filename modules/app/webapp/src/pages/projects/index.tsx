@@ -4,11 +4,13 @@ import { withAuthSSR } from "@/server/auth/authenticated-ssr";
 
 function Projects() {
   return (
-    <div className="text-center py-4">
-      <h1>Projects</h1>
-      <Button variant="primary" href="/projects/0">
-        Flink pipeline example
-      </Button>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-foreground mb-6">Projects</h1>
+      <div className="text-center">
+        <Button variant="primary" href="/projects/0">
+          Flink pipeline example
+        </Button>
+      </div>
     </div>
   );
 }

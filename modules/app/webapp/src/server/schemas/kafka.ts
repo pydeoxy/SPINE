@@ -62,6 +62,18 @@ export interface ConsumerGroupsResponse {
   groups: GroupOverview[];
 }
 
+export interface ConsumerGroup {
+  groupId: string;
+  state: string;
+  protocol: string;
+  protocolType: string;
+  members: Array<{
+    memberId: string;
+    clientId: string;
+    clientHost: string;
+  }>;
+}
+
 /** ---------------------- EXPORTS ---------------------- */
 
 export type {

@@ -62,6 +62,7 @@ export const authRouter = router({
           email: user.email,
           fullName: user.name ?? "",
           avatar: "",
+          role: user.role as "ADMIN" | "USER",
         };
 
         ctx.session.data.user = session;
@@ -122,6 +123,7 @@ export const authRouter = router({
           email: user.email,
           fullName: fullUser.name ?? "",
           avatar: "",
+          role: fullUser.role as "ADMIN" | "USER",
         };
 
         ctx.session.data = { user: session };
@@ -180,6 +182,7 @@ export const authRouter = router({
           email: user.email,
           fullName: user.name || name,
           avatar: "",
+          role: user.role as "ADMIN" | "USER",
         };
 
         ctx.session.data = { user: session };
