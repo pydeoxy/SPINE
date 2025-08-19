@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:kafka": "tsx test/kafka-connection.ts"
+    "test:kafka": "tsx test/kafka-connection.ts",
+    "test:schema-registry": "tsx test/schema-registry-connection.ts",
+    "test:schema-registration": "tsx test/test-schema-registration.ts",
+    "debug:schema-registry": "tsx test/debug-schema-registry.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.2",

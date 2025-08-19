@@ -12,6 +12,7 @@ type User = {
   fullName: string;
   email: string;
   avatar: string;
+  role: "ADMIN" | "USER";
 };
 
 type AuthContextType = {

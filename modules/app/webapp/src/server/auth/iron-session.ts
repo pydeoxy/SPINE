@@ -19,6 +19,7 @@ export interface UserSession {
   fullName: string;
   email: string;
   avatar: string;
+  role: "ADMIN" | "USER";
 }
 
 // Add user session to iron-session

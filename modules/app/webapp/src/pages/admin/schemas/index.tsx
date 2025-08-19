@@ -125,7 +125,17 @@ export default SchemaManagementPage;
 
 export const getServerSideProps = withAuthSSR({
   handler: async (ctx) => {
-    const user = ctx.req.session.data;
+    const user = ctx.req.session.data.user;
+
+    // Check if user is authenticated and has ADMIN role
+    if (!user || user.role !== "ADMIN") {
+      return {
+        redirect: {
+          destination: "/dashboard",
+          permanent: false,
+        },
+      };
+    }
 
     return {
       props: {

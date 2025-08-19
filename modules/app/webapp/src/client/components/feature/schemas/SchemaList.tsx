@@ -17,7 +17,7 @@ export const SchemaList: React.FC<SchemaListProps> = ({
   const router = useRouter();
 
   const handleRowClick = (subject: string) => {
-    void router.push(`/schemas/${encodeURIComponent(subject)}`);
+    void router.push(`/admin/schemas/${encodeURIComponent(subject)}`);
   };
 
   if (isLoading) {
