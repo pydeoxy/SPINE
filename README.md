@@ -4,7 +4,7 @@
 
 SPINE is a production-ready IoT platform designed to handle complex sensor data integration, real-time stream processing, and multi-level digital twin deployments.
 
-## 1. Key Features
+## ✨ Key Features
 
 - **Event-Driven Architecture** - Built on Apache Kafka for reliable, scalable message streaming
 - **Real-Time Stream Processing** - Apache Flink integration for complex event processing and analytics
@@ -15,7 +15,7 @@ SPINE is a production-ready IoT platform designed to handle complex sensor data 
 - **Visual Pipeline Builder** - Drag-and-drop interface for creating data processing workflows
 - **Multi-Tenant Architecture** - Project-based isolation with role-based access control
 
-## 2. Architecture Overview
+## 🏗️ Architecture Overview
 
 SPINE follows a modular, microservices architecture with clear separation of concerns:
 
@@ -30,114 +30,47 @@ SPINE follows a modular, microservices architecture with clear separation of con
 - **Application**: Next.js 15 web interface with tRPC
 - **Egress**: API gateway and data export services
 
-## 3. Quick Start
+Check [🏗️ Architecture Guide](./docs/architecture.md) for more details.
 
-### Prerequisites
+## 🚀 Quick Start
 
-- Docker & Docker Compose (v2.20+)
-- Node.js 20+ with pnpm
-- Git
+**Prerequisites:**
 
-### Installation
+- Docker & Docker Compose (v2.20+) ([link](https://docs.docker.com/compose/install/))
+- [Node.js 20+](https://nodejs.org/en/download) with [pnpm](https://pnpm.io/installation#using-other-package-managers)
+- [Git](https://git-scm.com/downloads)
 
-1. **Clone the repository**
 
-```bash
-git clone https://github.com/your-org/spine.git
-cd spine
-```
-
-2. **Configure environment**
+To run the platform, you can use the following commands:
 
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-## 4. Development Setup
-
-### Using Dev Containers (Recommended)
-
-SPINE includes VS Code Dev Container configuration for a consistent development environment:
-
-1. Install [VS Code](https://code.visualstudio.com/) and [Remote Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-2. Open the project in VS Code
-3. Click "Reopen in Container" when prompted
-
-### Manual Development Setup
-
-````bash
-# Install dependencies
-pnpm install
-
-# Generate Prisma clients
-pnpm turbo db:generate
-
-# Start development servers
-pnpm turbo dev  # In each service directory
-
-## 5. Configuration
-
-### Docker Compose Profiles
-
-```bash
-# Core infrastructure (databases, Kafka, MinIO)
-docker compose --profile infra up -d
-
-# Data connectors and ingestion
-docker compose --profile connectors up -d
-
-# Stream processing and analytics
-docker compose --profile analytics up -d
-
-# Complete platform
+# Clone the repository
+git clone https://github.com/shahramBarai/SPINE.git
+# Navigate to the project directory
+cd SPINE
+# Start the platform with all services
 docker compose --profile full up -d
-````
+# Stop the platform
+docker compose --profile full down
+```
 
-## 5. Documentation
+For more information about how to run the platform, check [📚 Developer Guide](./docs/developer_guide.md).
 
-- [Architecture Guide](./docs/architecture.md)
-- [API Reference](./docs/api.md)
-- [Deployment Guide](./docs/deployment.md)
-- [Contributing Guidelines](./CONTRIBUTING.md)
+## 👨‍💻 Contributing
 
-## 6. Security
+Contributions are welcome! Please read our [👨‍💻 Contributing Guidelines](./docs/contributing/README.md) for details.
 
-- **Authentication**: JWT-based with iron-session
-- **Authorization**: Role-based access control (RBAC)
-- **Data Validation**: Schema validation at ingestion
-- **Network Security**: TLS/SSL for all connections
-- **Secrets Management**: Environment-based configuration
+## 📜 Code of Conduct
 
-## 7. Performance
+Respect and constructive communication are our core values. Please take a moment to read through our [📜 Code of Conduct](./docs/code_of_conduct.md) to ensure a positive environment for everyone.
 
-SPINE is designed for high-throughput, low-latency operations:
-
-- **Ingestion**: 100K+ messages/second per node
-- **Storage**: Automatic time-based partitioning
-- **Query Performance**: Sub-second for recent data
-- **Horizontal Scaling**: All components support clustering
-
-## 8. Contributing
-
-Contributions are welcome! Please read our [Contributing Guidelines](./CONTRIBUTING.md) for details.
-
-### Development Workflow
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Run linting and tests
-6. Submit a pull request
-
-## 9. License
+## ⚖️ License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](./LICENSE) file for details.
 
 This project was developed in Metropolia AMK, Finland as part of the RADIAL project sponsored by ERDF and the Helsinki-Uusimaa Regional Council. See the [NOTICE](./NOTICE) file for additional information.
 
-## 10. Acknowledgments
+## 🙏 Acknowledgments
 
 - Metropolia University of Applied Sciences for supporting this project
 - The open-source community for the amazing tools and libraries
