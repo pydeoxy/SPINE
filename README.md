@@ -37,8 +37,7 @@ Check [🏗️ Architecture Guide](./docs/architecture.md) for more details.
 **Prerequisites:**
 
 - Docker & Docker Compose (v2.20+) ([link](https://docs.docker.com/compose/install/))
-- [Node.js 20+](https://nodejs.org/en/download) with [pnpm](https://pnpm.io/installation#using-other-package-managers)
-- [Git](https://git-scm.com/downloads)
+- Git ([link](https://git-scm.com/downloads))
 
 
 To run the platform, you can use the following commands:

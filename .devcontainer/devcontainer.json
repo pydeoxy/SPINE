@@ -8,11 +8,17 @@
     "vscode": {
       "extensions": [
         "github.copilot",
+        "esbenp.prettier-vscode",
+        "humao.rest-client",
         "prisma.prisma",
         "bradlc.vscode-tailwindcss",
-        "eamodio.gitlens",
-        "esbenp.prettier-vscode",
-        "humao.rest-client"
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.vscode-typescript-next",
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter"
       ]
     }
   }

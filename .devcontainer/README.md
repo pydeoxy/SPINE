@@ -1,6 +1,6 @@
-# DevContainer Setup for Next.js Development
+# DevContainer Setup for Multi-Language Development
 
-This DevContainer provides a complete development environment for the IoT Platform's Next.js web application.
+This DevContainer provides a complete development environment for the IoT Platform, supporting multiple programming languages used across different modules.
 
 ## Usage
 
@@ -9,18 +9,56 @@ This DevContainer provides a complete development environment for the IoT Platfo
 3. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) and select "Dev Containers: Reopen in Container"
 4. Wait for the container to build and start
 5. The terminal will open in `/workspace`
-6. Navigate to the webapp and start development:
-   ```bash
-   cd modules/app/webapp
-   pnpm dev
-   ```
+
+### Working with Different Modules
+
+**Node.js/TypeScript modules** (e.g., `modules/app/webapp`):
+```bash
+cd modules/app/webapp
+pnpm install
+pnpm dev
+```
+
+**Rust modules** (e.g., `modules/ingress/mqtt_subscriber`):
+```bash
+cd modules/ingress/mqtt_subscriber
+cargo build
+cargo run
+```
+
+**Python modules** (e.g., `modules/analytics/flink-cep`):
+```bash
+cd modules/analytics/flink-cep
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 ## Features
 
-- Node.js 20 with TypeScript support
-- pnpm package manager pre-installed
-- Automatic dependency installation on container creation
-- VS Code extensions for Next.js, TypeScript, ESLint, Prettier, and Tailwind CSS
+### Multi-Language Support
+
+- **Node.js 20** with TypeScript support
+  - pnpm package manager pre-installed
+  - For modules: app/webapp, storage/data-service, storage/timescale-writer, ingress/mqtt_subscriber_nodejs, analytics/job-submission-service
+
+- **Rust** (latest stable)
+  - rustup, cargo, rustfmt, clippy
+  - For modules: ingress/mqtt_subscriber
+
+- **Python 3** with pip and venv
+  - For modules: analytics/flink-cep
+
+### Development Tools
+
+- VS Code extensions for:
+  - TypeScript/JavaScript: ESLint, Prettier, Tailwind CSS, Prisma
+  - Rust: rust-analyzer, TOML support
+  - Python: Python, Pylance, Black formatter
+  - General: GitLens, REST Client, Copilot
+
+### Infrastructure Integration
+
 - Connection to external Docker services (PostgreSQL, TimescaleDB, MinIO, Kafka)
 - Port forwarding for Next.js dev server (3000) and Node.js debugging (9229)
 
