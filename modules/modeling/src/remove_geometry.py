@@ -236,5 +236,6 @@ if __name__ == "__main__":
 
     input_ttl = "C:/Users/yanpe/OneDrive - Metropolia Ammattikorkeakoulu Oy/Research/MD2MV/data/TTL/ARK_MET_ifcOWL.ttl"    
     output_ttl = "C:/Users/yanpe/OneDrive - Metropolia Ammattikorkeakoulu Oy/Research/MD2MV/data/TTL/ARK_MET_ifcOWL_no_geometry.ttl"
+    
     remove_ifc_geometry(input_ttl, output_ttl)
     validate_ttl_syntax(output_ttl)
