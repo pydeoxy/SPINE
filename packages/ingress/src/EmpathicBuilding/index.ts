@@ -74,11 +74,6 @@ class EmpathicBuildingService extends EventEmitter {
             body: formData.toString(),
         });
 
-        console.log("--------------------------------");
-        console.log("response:");
-        console.log(response);
-        console.log("--------------------------------");
-
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(
@@ -87,11 +82,6 @@ class EmpathicBuildingService extends EventEmitter {
         }
 
         const data = await response.json();
-
-        console.log("--------------------------------");
-        console.log("data:");
-        console.log(data);
-        console.log("--------------------------------");
 
         const expiresIn = (data.expires_in) * 1000; // Convert to milliseconds
 
@@ -414,20 +404,16 @@ class EmpathicBuildingService extends EventEmitter {
 
         // Location channel events
         if (channelName.startsWith("private-location-")) {
-            // const locationEvents = [
-            //     "asset-created",
-            //     "asset-modified",
-            //     "asset-deleted",
-            //     "gateway-created",
-            //     "gateway-modified",
-            //     "gateway-deleted",
-            //     "sensor-created",
-            //     "sensor-modified",
-            //     "sensor-deleted",
-            // ];
-
             const locationEvents = [
+                "asset-created",
+                "asset-modified",
+                "asset-deleted",
+                "gateway-created",
+                "gateway-modified",
+                "gateway-deleted",
+                "sensor-created",
                 "sensor-modified",
+                "sensor-deleted",
             ];
 
             for (const eventName of locationEvents) {
