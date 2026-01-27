@@ -53,24 +53,31 @@ class KafkaProducer {
         }
     }
 
-    async sendMessage(message: string): Promise<void> {
+    /**
+     * Send a message to a topic
+     * @param topic - The topic to send the message to
+     * @param key - The key to send the message to
+     * @param value - The value to send the message to
+     */
+    async sendMessage({topic, key, value}: {topic?: string, key: string, value: string}): Promise<void> {
         try {
             const result = await this.producer.send({
-                topic: this.topic,
-                messages: [{ value: message }],
+                topic: topic || this.topic,
+                messages: [{ key, value }],
                 acks: 0,
-            })
+            });
             logger.debug("Kafka producer: Message sent to Kafka! Result: ", result);
             if (!this.isConnected) {
                 logger.debug("Kafka producer: Kafka connection is established after sending message");
                 this.isConnected = true;
             }
         } catch (error) {
-            logger.error("Kafka producer: Failed to send message to Kafka", error);
+            logger.error("Kafka producer: Failed to send keyed message to Kafka", error);
             if (this.isConnected) {
                 logger.debug(
-                    "Kafka producer: Connection is lost! Message not sent: " +
-                        message,
+                    "Kafka producer: Connection is lost! Keyed message not sent, topic=%s key=%s",
+                    topic,
+                    key,
                 );
                 this.isConnected = false;
             }
