@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { type FastifyPluginAsync, type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { z } from "zod";
 import * as configs from "./utils/config";
@@ -19,6 +19,8 @@ const empathicBuildingService = new EmpathicBuildingService(getEmpathicBuildingC
 // Export dependencies
 export {
     Fastify,
+    FastifyPluginAsync,
+    FastifyInstance,
     cors,
     z,
     configs,
@@ -26,4 +28,4 @@ export {
     kafkaProducer,
     schemaManager,
     empathicBuildingService,
-  };
+};

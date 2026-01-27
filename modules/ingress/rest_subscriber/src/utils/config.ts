@@ -206,12 +206,44 @@ const getEmpathicBuildingConfig = (): EmpathicBuildingConfig => {
     return empathicBuildingConfig;
 };
 
+let locationToCampusMap: Map<string, string> | undefined = undefined;
+
+/**
+ * External EB locationId -> internal campusId mapping.
+ * JSON in env EB_LOCATION_TO_CAMPUS_MAP, e.g. {"7":"campus-1","8":"campus-2"}.
+ * O(1) lookup via Map; missing key yields "unknown".
+ */
+const getLocationToCampusMap = (): Map<string, string> => {
+    if (locationToCampusMap) {
+        return locationToCampusMap;
+    }
+
+    const raw = process.env.EB_LOCATION_TO_CAMPUS_MAP;  
+    if (raw && typeof raw === "string") {
+        try {
+            const obj = parseJSON(raw) as Record<string, string> | undefined;
+            if (!obj || typeof obj !== "object") {
+                locationToCampusMap = new Map();
+                return locationToCampusMap;
+            }
+            locationToCampusMap = new Map(Object.entries(obj).filter(([, v]) => typeof v === "string"));
+            return locationToCampusMap;
+        } catch {
+            locationToCampusMap = new Map();
+            return locationToCampusMap;
+        }
+    }
+    locationToCampusMap = new Map();
+    return locationToCampusMap;
+};
+
 export {
     NODE_ENV,
     HOST,
     PORT,
     SEND_TO,
     getEmpathicBuildingConfig,
+    getLocationToCampusMap,
     type RestApiConfig,
     type RestEndpointConfig,
     type RestPaginationConfig,

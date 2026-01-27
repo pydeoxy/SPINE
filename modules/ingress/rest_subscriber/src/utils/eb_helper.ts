@@ -6,47 +6,74 @@
  */
 
 import { logger } from "@spine/shared";
-import { empathicBuildingService, kafkaProducer, excelService } from "../deps";
+import { empathicBuildingService, kafkaProducer, excelService, configs } from "../deps";
 import type { DecodedEvent } from "@spine/ingress";
+import {
+    extractMeasurements,
+    resolveCampusId,
+    UNKNOWN_CAMPUS_ID,
+} from "./extractor";
+
+/** Extract external locationId from Pusher channel name, e.g. "private-location-7" -> "7" */
+function locationIdFromChannel(channel: string): string {
+    const prefix = "private-location-";
+    return channel.startsWith(prefix) ? channel.slice(prefix.length) : "";
+}
 
 /**
- * Handle incoming Empathic Building events and route to configured destination
+ * Handle incoming Empathic Building events and route to configured destination.
  */
 async function handleEmpathicBuildingEvent(event: DecodedEvent): Promise<void> {
+    const legacyMessage = {
+        eventType: event.eventType,
+        channel: event.channel,
+        data: event.data,
+        timestamp: event.timestamp,
+        source: "empathic-building",
+    };
+
+    const locationIdFromCh = locationIdFromChannel(event.channel);
+    const campusId = resolveCampusId(locationIdFromCh, configs.getLocationToCampusMap());
+
+    let outputMessages;
     try {
-        // Prepare message data
-        const message = {
+        outputMessages = extractMeasurements(event.data, campusId);
+    } catch (err) {
+        logger.warn("EB: extractMeasurements failed, skipping message", {
+            err,
             eventType: event.eventType,
             channel: event.channel,
-            data: event.data,
-            timestamp: event.timestamp,
-            source: "empathic-building",
-        };
+        });
+        return;
+    }
 
-        // Route data based on SEND_TO configuration
-        if (kafkaProducer) {
-            // Send to Kafka
-            const messageString = JSON.stringify(message);
-            await kafkaProducer.sendMessage(messageString);
-            logger.debug(
-                `Empathic Building: Sent event ${event.eventType} to Kafka`,
-            );
-        } else if (excelService) {
-            // Save to Excel file
-            await excelService.saveEvent(message);
-            logger.debug(
-                `Empathic Building: Saved event ${event.eventType} to Excel`,
-            );
-        } else {
-            // Log to console
-            const messageString = JSON.stringify(message);
-            logger.info(messageString);
+    for (const outMsg of outputMessages) {
+        if (campusId === UNKNOWN_CAMPUS_ID) {
+            logger.debug("EB: missing location->campus mapping, using unknown", {
+                locationId: outMsg.campusId,
+            });
         }
-    } catch (error) {
-        logger.error(
-            `Empathic Building: Failed to process event ${event.eventType}:`,
-            error,
-        );
+
+        try {
+            if (kafkaProducer) {
+                await kafkaProducer.sendMessage({
+                    key: outMsg.sensorId,
+                    value: JSON.stringify(outMsg),
+                });
+                logger.debug("EB: sensor event sent to Kafka", outMsg);
+            } else if (excelService) {
+                await excelService.saveEvent(legacyMessage);
+                logger.debug("EB: sensor event sent to Excel", outMsg);
+            } else {
+                logger.info(JSON.stringify(outMsg));
+            }
+        } catch (err) {
+            logger.error("EB: Kafka produce failed", {
+                err,
+                outMsg,
+            });
+            throw err;
+        }
     }
 }
 
@@ -63,33 +90,8 @@ function setupEmpathicBuildingHandlers(): void {
         logger.warn("Empathic Building service: Disconnected from Pusher");
     });
 
-    empathicBuildingService.on("subscribed", ({ channel }) => {
-        logger.info(`Empathic Building service: Subscribed to channel ${channel}`);
-    });
-
-    // Handle all events and route to configured destination
-    empathicBuildingService.on("event", async (event: DecodedEvent) => {
-        await handleEmpathicBuildingEvent(event);
-    });
-
     // Handle specific event types (optional - for additional logging/processing)
     empathicBuildingService.on("sensor-modified", async (event: DecodedEvent) => {
-        logger.debug("Empathic Building: Sensor modified event received");
-        await handleEmpathicBuildingEvent(event);
-    });
-
-    empathicBuildingService.on("asset-created", async (event: DecodedEvent) => {
-        logger.debug("Empathic Building: Asset created event received");
-        await handleEmpathicBuildingEvent(event);
-    });
-
-    empathicBuildingService.on("asset-modified", async (event: DecodedEvent) => {
-        logger.debug("Empathic Building: Asset modified event received");
-        await handleEmpathicBuildingEvent(event);
-    });
-
-    empathicBuildingService.on("asset-deleted", async (event: DecodedEvent) => {
-        logger.debug("Empathic Building: Asset deleted event received");
         await handleEmpathicBuildingEvent(event);
     });
 
