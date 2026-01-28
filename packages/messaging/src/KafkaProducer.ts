@@ -2,16 +2,6 @@ import { Kafka, Producer } from "kafkajs";
 import { logger } from "@spine/shared";
 import { getKafkaConfig, getKafkaTopic } from "./utils/config";
 
-interface KafkaConfig {
-    clientId: string;
-    brokers: string[];
-    connectionTimeout: number;
-    requestTimeout: number;
-    retry: {
-        retries: number;
-    };
-}
-
 class KafkaProducer {
     private kafka: Kafka;
     private producer: Producer;
@@ -97,4 +87,4 @@ class KafkaProducer {
     }
 }
 
-export { KafkaProducer, type KafkaConfig };
+export { KafkaProducer };

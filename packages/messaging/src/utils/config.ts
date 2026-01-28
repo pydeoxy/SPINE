@@ -128,6 +128,7 @@ export {
     getKafkaConfig,
     getKafkaTopic,
     getSchemaRegistryConfig,
+    type KafkaConfig,
     type SchemaRegistryConfig,
 };
 
