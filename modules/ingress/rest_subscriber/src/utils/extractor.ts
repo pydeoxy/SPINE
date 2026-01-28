@@ -3,6 +3,9 @@
  * Passes last_measurement through as measurement; downstream interprets via sensorId.
  * Reuses types.RawMeasurement and types.KafkaOutputEvent.
  */
+
+import { logger } from "@spine/shared";
+
 /**
  * Internal record before campusId is applied.
  * Reused by extractor and toKafkaOutputEvent.
@@ -25,7 +28,13 @@ function recordsFromSensor(
     // FIXME: change this based on the actual sensor id in the BIM model
     const sensorId = sensor.uuid as string | undefined; // options: id, legacy_id or uuid
     
-    if (!sensorId) return [];
+    if (!sensorId || !sensor.last_measurement) {
+        logger.warn("EB: extractMeasurements failed, skipping message", {
+            campusId,
+            sensor
+        });
+        return [];
+    }
 
     return [
         {
@@ -54,24 +63,14 @@ function extractMeasurements(
         for (const item of data) {
             if (item && typeof item === "object") {
                 out.push(...recordsFromSensor(item as Record<string, unknown>, campusId));
+            } else {
+                logger.error("EB: extractMeasurements failed, item is not an object -> skipping item", {
+                    campusId,
+                    item,
+                });
             }
         }
-        return out;
     }
-
-    if (typeof data !== "object") return out;
-    const obj = data as Record<string, unknown>;
-    const sensors = obj.sensors ?? obj.items ?? obj.data;
-    if (Array.isArray(sensors)) {
-        for (const s of sensors) {
-            if (s && typeof s === "object") {
-                out.push(...recordsFromSensor(s as Record<string, unknown>, campusId));
-            }
-        }
-        return out;
-    }
-
-    out.push(...recordsFromSensor(obj, campusId));
     return out;
 }
 
